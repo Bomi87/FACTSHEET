@@ -74,12 +74,12 @@
       white-space: nowrap;
     }
 
-    .toolbar {
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 10px;
-    }
+ .toolbar {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
 
     .search-wrap {
       position: relative;
@@ -247,32 +247,38 @@
       text-align: center;
     }
 
-    @media (max-width: 768px) {
-      .app {
-        padding: 10px;
-      }
+@media (max-width: 768px) {
+  .app {
+    padding: 10px;
+  }
 
-      .hero {
-        padding: 16px 14px;
-        border-radius: 14px;
-      }
+  .hero {
+    padding: 16px 14px;
+    border-radius: 14px;
+  }
 
-      .title {
-        font-size: 20px;
-      }
+  .title {
+    font-size: 20px;
+  }
 
-      .subtitle {
-        font-size: 12px;
-      }
+  .subtitle {
+    font-size: 12px;
+  }
 
-      .toolbar {
-        grid-template-columns: 1fr;
-      }
+  .toolbar {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
 
-      .btn {
-        width: 100%;
-      }
+  .btn {
+    width: auto;
+    min-width: 160px;
+  }
 
+  .btn-primary {
+    width: 70%;
+    max-width: 220px;
+  }
       .panel {
         border-radius: 14px;
       }
@@ -357,8 +363,7 @@
             maxlength="20"
           />
         </div>
-        <button class="btn btn-primary" id="searchBtn">Search</button>
-        <button class="btn btn-secondary" id="refreshBtn">Refresh</button>
+<button class="btn btn-primary" id="searchBtn">Search</button>
       </div>
     </section>
 
@@ -393,7 +398,7 @@
 
     const $searchInput = document.getElementById('searchInput');
     const $searchBtn = document.getElementById('searchBtn');
-    const $refreshBtn = document.getElementById('refreshBtn');
+   
     const $contentArea = document.getElementById('contentArea');
     const $statusText = document.getElementById('statusText');
     const $resultMeta = document.getElementById('resultMeta');
@@ -540,9 +545,7 @@
 
     $searchBtn.addEventListener('click', applyFilter);
 
-    $refreshBtn.addEventListener('click', () => {
-      loadData(true);
-    });
+ 
 
     $searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
