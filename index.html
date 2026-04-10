@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FACT SHEET Viewer</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --head: #111827;
+      --headText: #ffffff;
+      --accent: #7c3aed;
+      --accentSoft: #ede9fe;
+      --shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .app {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #111827, #374151);
+      color: #fff;
+      border-radius: 18px;
+      padding: 20px 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      margin: 0;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.82);
+    }
+
+    .badge {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .toolbar {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search {
+      width: 100%;
+      height: 46px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      padding: 0 14px;
+      font-size: 15px;
+      outline: none;
+      background: #fff;
+    }
+
+    .search:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(124,58,237,0.12);
+    }
+
+    .btn {
+      height: 46px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .panel-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .status {
+      padding: 14px 16px 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .loading,
+    .empty,
+    .error {
+      padding: 28px 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .error {
+      color: #b91c1c;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    thead th {
+      background: var(--head);
+      color: var(--headText);
+      font-size: 12px;
+      font-weight: 700;
+      text-align: left;
+      padding: 12px 14px;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    tbody tr:hover {
+      background: #fafafa;
+    }
+
+    .icao-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 58px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accentSoft);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.4px;
+    }
+
+    .file-name {
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .path {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+      word-break: break-all;
+    }
+
+    .open-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      background: var(--accent);
+      color: #fff;
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .footer-note {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .app {
+        padding: 10px;
+      }
+
+      .hero {
+        padding: 16px 14px;
+        border-radius: 14px;
+      }
+
+      .title {
+        font-size: 20px;
+      }
+
+      .subtitle {
+        font-size: 12px;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .panel {
+        border-radius: 14px;
+      }
+
+      .panel-head {
+        padding: 12px 14px;
+      }
+
+      .status {
+        padding: 12px 14px 0;
+      }
+
+      .table-wrap {
+        display: none;
+      }
+
+      .mobile-list {
+        display: block;
+        padding: 10px;
+      }
+
+      .mobile-card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fff;
+      }
+
+      .mobile-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .mobile-name {
+        font-size: 14px;
+        font-weight: 800;
+        word-break: break-word;
+      }
+
+      .mobile-meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+        line-height: 1.45;
+        word-break: break-word;
+      }
+
+      .mobile-actions {
+        margin-top: 10px;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-list {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <h1 class="title">FACT SHEET</h1>
+          <div class="subtitle">ICAO 4자리 공항코드로 PDF 검색</div>
+        </div>
+        <div class="badge" id="folderBadge">Folder: -</div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-wrap">
+          <input
+            type="text"
+            id="searchInput"
+            class="search"
+            placeholder="예: PANC, RKSI, KJFK"
+            maxlength="20"
+          />
+        </div>
+        <button class="btn btn-primary" id="searchBtn">Search</button>
+        <button class="btn btn-secondary" id="refreshBtn">Refresh</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">PDF List</div>
+        <div class="panel-meta" id="resultMeta">-</div>
+      </div>
+
+      <div class="status" id="statusText">Loading...</div>
+
+      <div id="contentArea">
+        <div class="loading">데이터를 불러오는 중입니다...</div>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      Google Drive + Apps Script + GitHub Pages
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxaULIWF-TYH7YLGzU3PdTvf9oxsBp4dOEQ5ts6rR-6ETAqItzbdNXRkaXHiLmoL4a7Aw/exec';
+
+    const state = {
+      allFiles: [],
+      filteredFiles: [],
+      folderName: '',
+      totalCount: 0,
+      query: ''
+    };
+
+    const $searchInput = document.getElementById('searchInput');
+    const $searchBtn = document.getElementById('searchBtn');
+    const $refreshBtn = document.getElementById('refreshBtn');
+    const $contentArea = document.getElementById('contentArea');
+    const $statusText = document.getElementById('statusText');
+    const $resultMeta = document.getElementById('resultMeta');
+    const $folderBadge = document.getElementById('folderBadge');
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function setLoading(message = '데이터를 불러오는 중입니다...') {
+      $statusText.textContent = message;
+      $contentArea.innerHTML = `<div class="loading">${escapeHtml(message)}</div>`;
+    }
+
+    function setError(message) {
+      $statusText.textContent = '오류 발생';
+      $contentArea.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+    }
+
+    function applyFilter() {
+      const q = $searchInput.value.trim().toUpperCase();
+      state.query = q;
+
+      if (!q) {
+        state.filteredFiles = [...state.allFiles];
+      } else {
+        state.filteredFiles = state.allFiles.filter(file => {
+          const icao = String(file.icao || '').toUpperCase();
+          const name = String(file.name || '').toUpperCase();
+          const path = String(file.path || '').toUpperCase();
+          return icao.includes(q) || name.includes(q) || path.includes(q);
+        });
+      }
+
+      render();
+    }
+
+    function render() {
+      const files = state.filteredFiles || [];
+      const total = state.totalCount || 0;
+      const filtered = files.length;
+      const queryText = state.query ? ` | Search: ${state.query}` : '';
+
+      $folderBadge.textContent = `Folder: ${state.folderName || '-'}`;
+      $resultMeta.textContent = `Total ${total} / Showing ${filtered}${queryText}`;
+      $statusText.textContent = state.query
+        ? `"${state.query}" 검색 결과 ${filtered}건`
+        : `전체 ${filtered}건`;
+
+      if (!files.length) {
+        $contentArea.innerHTML = `<div class="empty">검색 결과가 없습니다.</div>`;
+        return;
+      }
+
+      const desktopRows = files.map(file => {
+        return `
+          <tr>
+            <td><span class="icao-badge">${escapeHtml(file.icao || '-')}</span></td>
+            <td>
+              <div class="file-name">${escapeHtml(file.name || '')}</div>
+              <div class="path">${escapeHtml(file.path || '')}</div>
+            </td>
+            <td>${escapeHtml(file.createdTime || '-')}</td>
+            <td>${escapeHtml(file.updatedTime || '-')}</td>
+            <td>
+              <a class="open-link" href="${escapeHtml(file.url || '#')}" target="_blank" rel="noopener noreferrer">
+                Open PDF
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      const mobileCards = files.map(file => {
+        return `
+          <div class="mobile-card">
+            <div class="mobile-top">
+              <span class="icao-badge">${escapeHtml(file.icao || '-')}</span>
+              <a class="open-link" href="${escapeHtml(file.url || '#')}" target="_blank" rel="noopener noreferrer">
+                Open PDF
+              </a>
+            </div>
+            <div class="mobile-name">${escapeHtml(file.name || '')}</div>
+            <div class="mobile-meta">Path: ${escapeHtml(file.path || '')}</div>
+            <div class="mobile-meta">Created: ${escapeHtml(file.createdTime || '-')}</div>
+            <div class="mobile-meta">Updated: ${escapeHtml(file.updatedTime || '-')}</div>
+          </div>
+        `;
+      }).join('');
+
+      $contentArea.innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 100px;">ICAO</th>
+                <th>File</th>
+                <th style="width: 180px;">Created</th>
+                <th style="width: 180px;">Updated</th>
+                <th style="width: 120px;">Open</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${desktopRows}
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-list">
+          ${mobileCards}
+        </div>
+      `;
+    }
+
+    async function loadData(forceRefresh = false) {
+      try {
+        setLoading(forceRefresh ? '목록을 새로고침하는 중입니다...' : '데이터를 불러오는 중입니다...');
+
+        const url = forceRefresh
+          ? `${API_URL}?refresh=1`
+          : API_URL;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.success) {
+          throw new Error(data.message || '데이터를 불러오지 못했습니다.');
+        }
+
+        state.allFiles = Array.isArray(data.files) ? data.files : [];
+        state.filteredFiles = [...state.allFiles];
+        state.folderName = data.folderName || '';
+        state.totalCount = data.totalCount || state.allFiles.length;
+
+        applyFilter();
+      } catch (err) {
+        setError(err.message || '오류가 발생했습니다.');
+      }
+    }
+
+    $searchBtn.addEventListener('click', applyFilter);
+
+    $refreshBtn.addEventListener('click', () => {
+      loadData(true);
+    });
+
+    $searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        applyFilter();
+      }
+    });
+
+    $searchInput.addEventListener('input', () => {
+      applyFilter();
+    });
+
+    loadData(false);
+  </script>
+</body>
+</html>
