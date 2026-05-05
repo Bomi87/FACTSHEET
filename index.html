@@ -74,12 +74,12 @@
       white-space: nowrap;
     }
 
- .toolbar {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-}
+    .toolbar {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
 
     .search-wrap {
       position: relative;
@@ -247,38 +247,39 @@
       text-align: center;
     }
 
-@media (max-width: 768px) {
-  .app {
-    padding: 10px;
-  }
+    @media (max-width: 768px) {
+      .app {
+        padding: 10px;
+      }
 
-  .hero {
-    padding: 16px 14px;
-    border-radius: 14px;
-  }
+      .hero {
+        padding: 16px 14px;
+        border-radius: 14px;
+      }
 
-  .title {
-    font-size: 20px;
-  }
+      .title {
+        font-size: 20px;
+      }
 
-  .subtitle {
-    font-size: 12px;
-  }
+      .subtitle {
+        font-size: 12px;
+      }
 
-  .toolbar {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
+      .toolbar {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
 
-  .btn {
-    width: auto;
-    min-width: 160px;
-  }
+      .btn {
+        width: auto;
+        min-width: 160px;
+      }
 
-  .btn-primary {
-    width: 70%;
-    max-width: 220px;
-  }
+      .btn-primary {
+        width: 70%;
+        max-width: 220px;
+      }
+
       .panel {
         border-radius: 14px;
       }
@@ -343,45 +344,62 @@
   </style>
 </head>
 <body>
-  <div class="app">
-    <section class="hero">
-      <div class="hero-top">
-        <div>
-          <h1 class="title">FACT SHEET</h1>
-          <div class="subtitle">ICAO 4자리 공항코드로 PDF 검색</div>
+  <div id="authScreen" style="
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    background:#f4f7fb;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans KR',Arial,sans-serif;
+    color:#1f2937;
+    font-size:15px;
+    font-weight:700;
+  ">
+    승인 확인 중...
+  </div>
+
+  <div id="appRoot" style="display:none;">
+    <div class="app">
+      <section class="hero">
+        <div class="hero-top">
+          <div>
+            <h1 class="title">FACT SHEET</h1>
+            <div class="subtitle">ICAO 4자리 공항코드로 PDF 검색</div>
+          </div>
+          <div class="badge" id="folderBadge">Folder: -</div>
         </div>
-        <div class="badge" id="folderBadge">Folder: -</div>
-      </div>
 
-      <div class="toolbar">
-        <div class="search-wrap">
-          <input
-            type="text"
-            id="searchInput"
-            class="search"
-            placeholder="예: PANC"
-            maxlength="20"
-          />
+        <div class="toolbar">
+          <div class="search-wrap">
+            <input
+              type="text"
+              id="searchInput"
+              class="search"
+              placeholder="예: PANC"
+              maxlength="20"
+            />
+          </div>
+          <button class="btn btn-primary" id="searchBtn">Search</button>
         </div>
-<button class="btn btn-primary" id="searchBtn">Search</button>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">PDF List</div>
+          <div class="panel-meta" id="resultMeta">-</div>
+        </div>
+
+        <div class="status" id="statusText">Loading...</div>
+
+        <div id="contentArea">
+          <div class="loading">데이터를 불러오는 중입니다...</div>
+        </div>
+      </section>
+
+      <div class="footer-note">
+        Google Drive + Apps Script + GitHub Pages
       </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <div class="panel-title">PDF List</div>
-        <div class="panel-meta" id="resultMeta">-</div>
-      </div>
-
-      <div class="status" id="statusText">Loading...</div>
-
-      <div id="contentArea">
-        <div class="loading">데이터를 불러오는 중입니다...</div>
-      </div>
-    </section>
-
-    <div class="footer-note">
-      Google Drive + Apps Script + GitHub Pages
     </div>
   </div>
 
@@ -396,13 +414,19 @@
       query: ''
     };
 
-    const $searchInput = document.getElementById('searchInput');
-    const $searchBtn = document.getElementById('searchBtn');
-   
-    const $contentArea = document.getElementById('contentArea');
-    const $statusText = document.getElementById('statusText');
-    const $resultMeta = document.getElementById('resultMeta');
-    const $folderBadge = document.getElementById('folderBadge');
+    let FACT_SHEET_APP_STARTED = false;
+    let FACT_SHEET_EVENTS_BOUND = false;
+
+    function getEls() {
+      return {
+        searchInput: document.getElementById('searchInput'),
+        searchBtn: document.getElementById('searchBtn'),
+        contentArea: document.getElementById('contentArea'),
+        statusText: document.getElementById('statusText'),
+        resultMeta: document.getElementById('resultMeta'),
+        folderBadge: document.getElementById('folderBadge')
+      };
+    }
 
     function escapeHtml(str) {
       return String(str || '')
@@ -414,17 +438,22 @@
     }
 
     function setLoading(message = '데이터를 불러오는 중입니다...') {
-      $statusText.textContent = message;
-      $contentArea.innerHTML = `<div class="loading">${escapeHtml(message)}</div>`;
+      const { statusText, contentArea } = getEls();
+      statusText.textContent = message;
+      contentArea.innerHTML = `<div class="loading">${escapeHtml(message)}</div>`;
     }
 
     function setError(message) {
-      $statusText.textContent = '오류 발생';
-      $contentArea.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+      const { statusText, contentArea } = getEls();
+      statusText.textContent = '오류 발생';
+      contentArea.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
     }
 
     function applyFilter() {
-      const q = $searchInput.value.trim().toUpperCase();
+      if (!FACT_SHEET_APP_STARTED) return;
+
+      const { searchInput } = getEls();
+      const q = searchInput.value.trim().toUpperCase();
       state.query = q;
 
       if (!q) {
@@ -442,19 +471,23 @@
     }
 
     function render() {
+      if (!FACT_SHEET_APP_STARTED) return;
+
+      const { folderBadge, resultMeta, statusText, contentArea } = getEls();
+
       const files = state.filteredFiles || [];
       const total = state.totalCount || 0;
       const filtered = files.length;
       const queryText = state.query ? ` | Search: ${state.query}` : '';
 
-      $folderBadge.textContent = `Folder: ${state.folderName || '-'}`;
-      $resultMeta.textContent = `Total ${total} / Showing ${filtered}${queryText}`;
-      $statusText.textContent = state.query
+      folderBadge.textContent = `Folder: ${state.folderName || '-'}`;
+      resultMeta.textContent = `Total ${total} / Showing ${filtered}${queryText}`;
+      statusText.textContent = state.query
         ? `"${state.query}" 검색 결과 ${filtered}건`
         : `전체 ${filtered}건`;
 
       if (!files.length) {
-        $contentArea.innerHTML = `<div class="empty">검색 결과가 없습니다.</div>`;
+        contentArea.innerHTML = `<div class="empty">검색 결과가 없습니다.</div>`;
         return;
       }
 
@@ -494,7 +527,7 @@
         `;
       }).join('');
 
-      $contentArea.innerHTML = `
+      contentArea.innerHTML = `
         <div class="table-wrap">
           <table>
             <thead>
@@ -518,6 +551,8 @@
     }
 
     async function loadData(forceRefresh = false) {
+      if (!FACT_SHEET_APP_STARTED) return;
+
       try {
         setLoading(forceRefresh ? '목록을 새로고침하는 중입니다...' : '데이터를 불러오는 중입니다...');
 
@@ -543,21 +578,53 @@
       }
     }
 
-    $searchBtn.addEventListener('click', applyFilter);
+    function bindFactSheetEvents() {
+      if (FACT_SHEET_EVENTS_BOUND) return;
+      FACT_SHEET_EVENTS_BOUND = true;
 
- 
+      const { searchInput, searchBtn } = getEls();
 
-    $searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      searchBtn.addEventListener('click', applyFilter);
+
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          applyFilter();
+        }
+      });
+
+      searchInput.addEventListener('input', () => {
         applyFilter();
+      });
+    }
+
+    function showAuthorizedApp() {
+      const authScreen = document.getElementById('authScreen');
+      const appRoot = document.getElementById('appRoot');
+
+      if (authScreen) authScreen.style.display = 'none';
+      if (appRoot) appRoot.style.display = 'block';
+    }
+
+    function startFactSheetAppAfterAuth() {
+      if (FACT_SHEET_APP_STARTED) return;
+
+      FACT_SHEET_APP_STARTED = true;
+      showAuthorizedApp();
+      bindFactSheetEvents();
+      loadData(false);
+    }
+
+    (function waitForPortalAuth() {
+      if (window.CURRENT_PORTAL_USER) {
+        startFactSheetAppAfterAuth();
+        return;
       }
-    });
 
-    $searchInput.addEventListener('input', () => {
-      applyFilter();
-    });
-
-    loadData(false);
+      setTimeout(waitForPortalAuth, 200);
+    })();
   </script>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://bomi87.github.io/SK-Aviation-portal/common-auth.js"></script>
 </body>
 </html>
